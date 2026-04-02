@@ -1,14 +1,8 @@
-MBALIGN  equ 1 << 0
-MEMINFO  equ 1 << 1
-FLAGS    equ MBALIGN | MEMINFO
-MAGIC    equ 0x1BADB002
-CHECKSUM equ -(MAGIC + FLAGS)
-
 section .multiboot
 align 4
-    dd MAGIC
-    dd FLAGS
-    dd CHECKSUM
+    dd 0x1BADB002
+    dd 0x00000003
+    dd -(0x1BADB002 + 0x00000003)
 
 section .bss
 align 16
@@ -17,12 +11,17 @@ stack_bottom:
 stack_top:
 
 section .text
-bits 32
 global start
 extern kernel_main
 
 start:
     mov esp, stack_top
+    push 0
+    popf
+    push ebx
+    push eax
     call kernel_main
     cli
+.hang:
     hlt
+    jmp .hang
