@@ -1,18 +1,22 @@
 ENTRY(start)
 
 SECTIONS {
-    . = 0x100000;
+    . = 1M;
 
-    .text : {
+    .multiboot ALIGN(4) : {
         *(.multiboot)
+    }
+
+    .text ALIGN(4) : {
         *(.text)
     }
 
-    .data : {
+    .data ALIGN(4) : {
         *(.data)
     }
 
-    .bss : {
+    .bss ALIGN(4) : {
+        *(COMMON)
         *(.bss)
     }
 }

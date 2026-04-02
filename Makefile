@@ -17,7 +17,9 @@ kernel.bin: boot.o kernel.o
 	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o
 
 run: kernel.bin
-	qemu-system-i386 -kernel kernel.bin
+	qemu-system-i386 \
+		-kernel kernel.bin \
+		-serial stdio
 
 clean:
 	rm -f *.o *.bin
