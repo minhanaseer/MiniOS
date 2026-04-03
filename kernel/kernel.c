@@ -1,83 +1,64 @@
 #include "../include/gdt.h"
-#include "../include/idt.h"
 
 static char* video = (char*) 0xb8000;
 static int cursor = 0;
 
-void clear_screen() {
+static void clear() {
     for (int i = 0; i < 80*25*2; i++) video[i] = 0;
     cursor = 0;
 }
 
-void print(const char* str, char color) {
-    int i = 0;
-    while (str[i] != 0) {
-        video[cursor*2]   = str[i];
-        video[cursor*2+1] = color;
-        cursor++;
-        i++;
-    }
+static void putchar(char c, char col) {
+    if (cursor >= 80*25) cursor = 0;
+    video[cursor*2]   = c;
+    video[cursor*2+1] = col;
+    cursor++;
 }
 
-void newline() {
-    cursor = ((cursor / 80) + 1) * 80;
+static void print(const char* s, char col) {
+    for (int i = 0; s[i]; i++) putchar(s[i], col);
+}
+
+static void newline() {
+    cursor = ((cursor/80)+1)*80;
     if (cursor >= 80*25) cursor = 0;
 }
 
-unsigned char port_read(unsigned short port) {
-    unsigned char result;
-    __asm__("inb %1, %0" : "=a"(result) : "Nd"(port));
-    return result;
+static unsigned char inb(unsigned short port) {
+    unsigned char r;
+    __asm__ volatile("inb %1,%0":"=a"(r):"Nd"(port));
+    return r;
 }
 
-char sc_to_char(unsigned char sc) {
-    char keys[58] = {
-        0, 0, '1','2','3','4','5','6','7','8','9','0','-','=',
-        0, 0, 'q','w','e','r','t','y','u','i','o','p','[',']',
-        '\n', 0, 'a','s','d','f','g','h','j','k','l',';','\'','`',
-        0,'\\','z','x','c','v','b','n','m',',','.','/', 0,
-        '*', 0, ' '
-    };
-    if (sc < 58) return keys[sc];
-    return 0;
-}
+static char sc_map[58] = {
+    0,0,'1','2','3','4','5','6','7','8','9','0','-','=',
+    0,0,'q','w','e','r','t','y','u','i','o','p','[',']',
+    '\n',0,'a','s','d','f','g','h','j','k','l',';','\'','`',
+    0,'\\','z','x','c','v','b','n','m',',','.','/',0,
+    '*',0,' '
+};
 
 void kernel_main() {
-    clear_screen();
-
+    clear();
     gdt_install();
-    idt_install();
-
-    print("GDT installed!", 0x0A);
-    newline();
-    print("IDT installed!", 0x0A);
-    newline();
-    print("MyKernel v0.1 - Type something!", 0x0A);
-    newline();
+    print("GDT OK", 0x0A); newline();
+    print("MyKernel v0.1", 0x0F); newline();
     print("> ", 0x0F);
 
-    unsigned char last_sc = 0;
-
-    // Simple polling loop - no interrupts needed
+    unsigned char prev = 0;
     while (1) {
-        unsigned char status = port_read(0x64);
-        if (status & 0x01) {
-            unsigned char sc = port_read(0x60);
-
-            // Only on key press and new key
-            if (!(sc & 0x80) && sc != last_sc) {
-                char c = sc_to_char(sc);
+        if (inb(0x64) & 1) {
+            unsigned char sc = inb(0x60);
+            if (!(sc & 0x80) && sc != prev) {
+                char c = (sc < 58) ? sc_map[sc] : 0;
                 if (c == '\n') {
                     newline();
-                    if (cursor >= 80*25) cursor = 0;
                     print("> ", 0x0F);
-                } else if (c != 0 && cursor < 80*25) {
-                    video[cursor*2]   = c;
-                    video[cursor*2+1] = 0x0F;
-                    cursor++;
+                } else if (c) {
+                    putchar(c, 0x0F);
                 }
             }
-            last_sc = (sc & 0x80) ? 0 : sc;
+            prev = (sc & 0x80) ? 0 : sc;
         }
     }
 }

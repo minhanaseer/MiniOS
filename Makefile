@@ -16,16 +16,8 @@ kernel.o: kernel/kernel.c
 gdt.o: kernel/gdt.c
 	$(CC) $(CFLAGS) -c kernel/gdt.c -o gdt.o
 
-idt.o: kernel/idt.c
-	$(CC) $(CFLAGS) -c kernel/idt.c -o idt.o
-
-kernel.bin: boot.o kernel.o gdt.o idt.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o gdt.o idt.o
-
-run: kernel.bin
-	qemu-system-i386 \
-		-kernel kernel.bin \
-		-serial stdio
+kernel.bin: boot.o kernel.o gdt.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o gdt.o
 
 clean:
 	rm -f *.o *.bin
