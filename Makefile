@@ -19,11 +19,8 @@ gdt.o: kernel/gdt.c
 idt.o: kernel/idt.c
 	$(CC) $(CFLAGS) -c kernel/idt.c -o idt.o
 
-keyboard.o: kernel/keyboard.c
-	$(CC) $(CFLAGS) -c kernel/keyboard.c -o keyboard.o
-
-kernel.bin: boot.o kernel.o gdt.o idt.o keyboard.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o gdt.o idt.o keyboard.o
+kernel.bin: boot.o kernel.o gdt.o idt.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o gdt.o idt.o
 
 run: kernel.bin
 	qemu-system-i386 \

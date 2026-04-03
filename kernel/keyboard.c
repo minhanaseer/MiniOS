@@ -1,8 +1,7 @@
 #include "../include/keyboard.h"
 
-extern char* video;
-extern int cursor;
-extern void newline();
+static char* video = (char*) 0xb8000;
+static int cursor = 160;
 
 static unsigned char port_read(unsigned short port) {
     unsigned char result;
@@ -31,24 +30,26 @@ void keyboard_handler() {
     if (!(sc & 0x80)) {
         char c = sc_to_char(sc);
         if (c == '\n') {
-            newline();
-            video[cursor*2] = '>';
+            cursor = ((cursor / 80) + 1) * 80;
+            if (cursor >= 80*25) cursor = 0;
+            video[cursor*2]   = '>';
             video[cursor*2+1] = 0x0F;
             cursor++;
-            video[cursor*2] = ' ';
+            video[cursor*2]   = ' ';
             video[cursor*2+1] = 0x0F;
             cursor++;
         } else if (c != 0) {
-            video[cursor*2]   = c;
-            video[cursor*2+1] = 0x0F;
-            cursor++;
+            if (cursor < 80*25) {
+                video[cursor*2]   = c;
+                video[cursor*2+1] = 0x0F;
+                cursor++;
+            }
         }
     }
     port_write(0x20, 0x20);
 }
 
 void keyboard_install() {
-    // Remap PIC IRQs to 0x20-0x2F
     port_write(0x20, 0x11);
     port_write(0xA0, 0x11);
     port_write(0x21, 0x20);
@@ -57,10 +58,7 @@ void keyboard_install() {
     port_write(0xA1, 0x02);
     port_write(0x21, 0x01);
     port_write(0xA1, 0x01);
-    // Unmask only keyboard (IRQ1)
     port_write(0x21, 0xFD);
     port_write(0xA1, 0xFF);
-
-    // Enable interrupts
     __asm__("sti");
 }
