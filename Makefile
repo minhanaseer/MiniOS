@@ -13,8 +13,11 @@ boot.o: boot/boot.asm
 kernel.o: kernel/kernel.c
 	$(CC) $(CFLAGS) -c kernel/kernel.c -o kernel.o
 
-kernel.bin: boot.o kernel.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o
+gdt.o: kernel/gdt.c
+	$(CC) $(CFLAGS) -c kernel/gdt.c -o gdt.o
+
+kernel.bin: boot.o kernel.o gdt.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o gdt.o
 
 run: kernel.bin
 	qemu-system-i386 \
