@@ -1,4 +1,6 @@
 #include "../include/gdt.h"
+#include "../include/idt.h"
+#include "../include/keyboard.h"
 
 char* video = (char*) 0xb8000;
 int cursor = 0;
@@ -13,19 +15,32 @@ void print(const char* str, char color) {
     }
 }
 
+void newline() {
+    cursor = ((cursor / 80) + 1) * 80;
+}
+
 void kernel_main() {
-    // Clear screen
-    for (int i = 0; i < 80*25*2; i++) {
-        video[i] = 0;
-    }
+    // Clear screen first
+    for (int i = 0; i < 80*25*2; i++) video[i] = 0;
 
-    // Install GDT
+    // Setup in correct order
     gdt_install();
+    idt_install();
 
-    // Show success
-    print("GDT installed successfully!", 0x0A);
-    cursor = 80;
-    print("MyKernel v0.1 - Ready!", 0x0F);
+    // Only enable keyboard AFTER gdt and idt are ready
+    keyboard_install();
 
-    while(1);
+    print("GDT installed!", 0x0A);
+    newline();
+    print("IDT installed!", 0x0A);
+    newline();
+    print("Keyboard ready! Type below:", 0x0A);
+    newline();
+    newline();
+    print("> ", 0x0F);
+
+    // Just wait — keyboard interrupts handle the rest
+    while(1) {
+        __asm__("hlt");
+    }
 }

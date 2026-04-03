@@ -39,3 +39,17 @@ gdt_flush:
     jmp 0x08:.flush
 .flush:
     ret
+
+global idt_flush
+idt_flush:
+    mov eax, [esp+4]
+    lidt [eax]
+    ret
+global keyboard_handler_asm
+extern keyboard_handler
+
+keyboard_handler_asm:
+    pusha
+    call keyboard_handler
+    popa
+    iret
