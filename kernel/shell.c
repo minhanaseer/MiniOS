@@ -1,5 +1,5 @@
 #define MAX_CMD 80
-
+#include "../include/pmm.h"
 static char cmd_buf[MAX_CMD];
 static int  cmd_len = 0;
 
@@ -44,6 +44,11 @@ static void run_command() {
         newline();
         print("  maths   — simple calculator", 0x0F);
         newline();
+        print("  mem     — show memory stats", 0x0F);
+        newline();
+    } else if (strcmp(cmd_buf, "mem") == 0) {
+            newline();
+            pmm_print_stats();
     } else if (strcmp(cmd_buf, "hello") == 0) {
         newline();
         print("Hello! Welcome to MyKernel!", 0x0A);

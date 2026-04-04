@@ -16,8 +16,11 @@ kernel.o: kernel/kernel.c
 shell.o: kernel/shell.c
 	$(CC) $(CFLAGS) -c kernel/shell.c -o shell.o
 
-kernel.bin: boot.o kernel.o shell.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o
+pmm.o: kernel/pmm.c
+	$(CC) $(CFLAGS) -c kernel/pmm.c -o pmm.o
+
+kernel.bin: boot.o kernel.o shell.o pmm.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o
 
 clean:
 	rm -f *.o *.bin
