@@ -1,6 +1,7 @@
 #include "../include/shell.h"
 #include "../include/pmm.h"
 #include "../include/fs.h"
+#include "../include/loader.h"
 char* video = (char*) 0xb8000;
 int cursor = 0;
 
@@ -77,6 +78,7 @@ void kernel_main() {
 
     shell_init();
     fs_init();
+    loader_init();
     print("> ", 0x0F);
     pmm_init(0);
     unsigned char last_sc = 0;

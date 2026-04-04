@@ -1,6 +1,6 @@
 #include "../include/pmm.h"
 #include "../include/fs.h"
-
+#include "../include/loader.h"
 #define MAX_CMD 80
 
 static char cmd_buf[MAX_CMD];
@@ -141,7 +141,17 @@ static void run_command() {
             newline();
             fs_delete(filename);
         }
-
+    } else if (strncmp(cmd_buf, "run ", 4) == 0) {
+        const char* progname = cmd_buf + 4;
+        if (strlen(progname) == 0) {
+            newline();
+            print("Usage: run programname", 0x04);
+            newline();
+        } else {
+            loader_run(progname);
+        }
+        print("  run   [program]  — run a program", 0x0F);
+        newline();
     } else {
         newline();
         print("Unknown command: ", 0x04);
