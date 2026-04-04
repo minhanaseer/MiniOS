@@ -1,6 +1,6 @@
 #include "../include/shell.h"
-
 #include "../include/pmm.h"
+
 char* video = (char*) 0xb8000;
 int cursor = 0;
 
@@ -77,7 +77,7 @@ void kernel_main() {
 
     shell_init();
     print("> ", 0x0F);
-    pmm_init(32 * 1024 * 1024); // 32MB RAM
+    pmm_init(65536);
     unsigned char last_sc = 0;
     int hold_counter = 0;
     int key_held = 0;

@@ -1,10 +1,9 @@
-typedef unsigned char  uint8_t;
-typedef unsigned int   uint32_t;
+typedef unsigned int uint32_t;
 
-#define PAGE_SIZE    4096
-#define MAX_PAGES    1024
+#define PAGE_SIZE  4096
+#define MAX_PAGES  64
 
-static uint8_t  pages[MAX_PAGES];
+static char pages[MAX_PAGES];
 static uint32_t total_pages = 0;
 static uint32_t used_pages  = 0;
 
