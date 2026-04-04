@@ -3,13 +3,26 @@
 char* video = (char*) 0xb8000;
 int cursor = 0;
 
+static void scroll() {
+    // Move every line up by one
+    for (int i = 0; i < 24*80*2; i++) {
+        video[i] = video[i + 80*2];
+    }
+    // Clear last line
+    for (int i = 24*80*2; i < 25*80*2; i += 2) {
+        video[i]   = ' ';
+        video[i+1] = 0x07;
+    }
+    cursor = 24*80;
+}
+
 void clear() {
     for (int i = 0; i < 80*25*2; i++) video[i] = 0;
     cursor = 0;
 }
 
 void putchar(char c, char col) {
-    if (cursor >= 80*25) cursor = 0;
+    if (cursor >= 80*25) scroll();
     video[cursor*2]   = c;
     video[cursor*2+1] = col;
     cursor++;
@@ -21,7 +34,7 @@ void print(const char* s, char col) {
 
 void newline() {
     cursor = ((cursor/80)+1)*80;
-    if (cursor >= 80*25) cursor = 0;
+    if (cursor >= 80*25) scroll();
 }
 
 void backspace() {
@@ -56,6 +69,8 @@ void kernel_main() {
     newline();
     print("Keyboard: OK", 0x0A);
     newline();
+    print("Type 'help' for commands", 0x08);
+    newline();
     print("----------------------------", 0x08);
     newline();
 
@@ -88,7 +103,6 @@ void kernel_main() {
             hold_counter = 0;
 
             if (sc == 0x0E) {
-                // Backspace
                 backspace();
                 shell_putchar('\b');
             } else {
