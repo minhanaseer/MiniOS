@@ -1,4 +1,5 @@
 #define MAX_CMD 80
+#include "../include/fs.h"
 #include "../include/pmm.h"
 static char cmd_buf[MAX_CMD];
 static int  cmd_len = 0;
@@ -30,21 +31,49 @@ static void run_command() {
 
     if (cmd_len == 0) {
         // empty — just show prompt
-    } else if (strcmp(cmd_buf, "help") == 0) {
+   } else if (strcmp(cmd_buf, "help") == 0) {
+    newline();
+    print("Commands:", 0x0B);
+    newline();
+    print("  help    — show this list", 0x0F);
+    newline();
+    print("  hello   — say hello", 0x0F);
+    newline();
+    print("  clear   — clear screen", 0x0F);
+    newline();
+    print("  about   — about MyKernel", 0x0F);
+    newline();
+    print("  maths   — simple calculator", 0x0F);
+    newline();
+    print("  mem     — show memory stats", 0x0F);
+    newline();
+    print("  ls      — list files", 0x0F);
+    newline();
+    print("  write   — create a file", 0x0F);
+    newline();
+    print("  read    — read a file", 0x0F);
+    newline();
+    print("  del     — delete a file", 0x0F);
+    newline();
+
+    } else if (strcmp(cmd_buf, "write") == 0) {
         newline();
-        print("Commands:", 0x0B);
+        fs_create("note.txt", "This is my first file in MyKernel!");
+
+    } else if (strcmp(cmd_buf, "read") == 0) {
         newline();
-        print("  help    — show this list", 0x0F);
+        fs_read("note.txt");
+
+    } else if (strcmp(cmd_buf, "del") == 0) {
         newline();
-        print("  hello   — say hello", 0x0F);
+        fs_delete("note.txt");
+        print("  ls      — list files", 0x0F);
         newline();
-        print("  clear   — clear screen", 0x0F);
+        print("  write   — create a file", 0x0F);
         newline();
-        print("  about   — about MyKernel", 0x0F);
+        print("  read    — read a file", 0x0F);
         newline();
-        print("  maths   — simple calculator", 0x0F);
-        newline();
-        print("  mem     — show memory stats", 0x0F);
+        print("  del     — delete a file", 0x0F);
         newline();
     } else if (strcmp(cmd_buf, "mem") == 0) {
             newline();
