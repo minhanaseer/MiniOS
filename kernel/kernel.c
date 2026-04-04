@@ -1,28 +1,30 @@
-static char* video = (char*) 0xb8000;
-static int cursor = 0;
+#include "../include/shell.h"
 
-static void clear() {
+char* video = (char*) 0xb8000;
+int cursor = 0;
+
+void clear() {
     for (int i = 0; i < 80*25*2; i++) video[i] = 0;
     cursor = 0;
 }
 
-static void putchar(char c, char col) {
+void putchar(char c, char col) {
     if (cursor >= 80*25) cursor = 0;
     video[cursor*2]   = c;
     video[cursor*2+1] = col;
     cursor++;
 }
 
-static void print(const char* s, char col) {
+void print(const char* s, char col) {
     for (int i = 0; s[i]; i++) putchar(s[i], col);
 }
 
-static void newline() {
+void newline() {
     cursor = ((cursor/80)+1)*80;
     if (cursor >= 80*25) cursor = 0;
 }
 
-static void backspace() {
+void backspace() {
     if (cursor > 0) {
         cursor--;
         video[cursor*2]   = ' ';
@@ -50,29 +52,26 @@ static char sc_map[58] = {
 
 void kernel_main() {
     clear();
-
     print("MyKernel v0.1", 0x0A);
     newline();
     print("Keyboard: OK", 0x0A);
     newline();
     print("----------------------------", 0x08);
     newline();
+
+    shell_init();
     print("> ", 0x0F);
 
     unsigned char last_sc = 0;
-    int key_held = 0;
     int hold_counter = 0;
+    int key_held = 0;
 
     while (1) {
         unsigned char status = inb(0x64);
-
-        if (!(status & 1)) {
-            continue;
-        }
+        if (!(status & 1)) continue;
 
         unsigned char sc = inb(0x60);
 
-        // Key release
         if (sc & 0x80) {
             unsigned char released = sc & 0x7F;
             if (released == last_sc) {
@@ -83,34 +82,32 @@ void kernel_main() {
             continue;
         }
 
-        // New key press
         if (sc != last_sc) {
             last_sc = sc;
             key_held = 0;
             hold_counter = 0;
 
-            char c = (sc < 58) ? sc_map[sc] : 0;
-
-            if (c == '\n') {
-                newline();
-                print("> ", 0x0F);
-            } else if (sc == 0x0E) {
+            if (sc == 0x0E) {
                 // Backspace
                 backspace();
-            } else if (c != 0) {
-                putchar(c, 0x0F);
+                shell_putchar('\b');
+            } else {
+                char c = (sc < 58) ? sc_map[sc] : 0;
+                if (c == '\n') {
+                    shell_putchar('\n');
+                } else if (c != 0) {
+                    putchar(c, 0x0F);
+                    shell_putchar(c);
+                }
             }
-
         } else {
-            // Same key held down
             hold_counter++;
-            if (hold_counter > 3000) {
-                key_held = 1;
-            }
+            if (hold_counter > 3000) key_held = 1;
             if (key_held) {
                 char c = (sc < 58) ? sc_map[sc] : 0;
                 if (c != 0 && c != '\n') {
                     putchar(c, 0x0F);
+                    shell_putchar(c);
                     wait();
                 }
             }

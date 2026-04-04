@@ -1,0 +1,103 @@
+#define MAX_CMD 80
+
+static char cmd_buf[MAX_CMD];
+static int  cmd_len = 0;
+
+extern void print(const char* s, char col);
+extern void newline();
+extern void putchar(char c, char col);
+extern void clear();
+
+static int strcmp(const char* a, const char* b) {
+    int i = 0;
+    while (a[i] && b[i] && a[i] == b[i]) i++;
+    return a[i] - b[i];
+}
+
+static void shell_clear() {
+    clear();
+    print("MyKernel v0.1", 0x0A);
+    newline();
+    print("Keyboard: OK", 0x0A);
+    newline();
+    print("----------------------------", 0x08);
+    newline();
+}
+
+static void run_command() {
+    // Null terminate
+    cmd_buf[cmd_len] = 0;
+
+    if (cmd_len == 0) {
+        // empty — just show prompt
+    } else if (strcmp(cmd_buf, "help") == 0) {
+        newline();
+        print("Commands:", 0x0B);
+        newline();
+        print("  help    — show this list", 0x0F);
+        newline();
+        print("  hello   — say hello", 0x0F);
+        newline();
+        print("  clear   — clear screen", 0x0F);
+        newline();
+        print("  about   — about MyKernel", 0x0F);
+        newline();
+        print("  maths   — simple calculator", 0x0F);
+        newline();
+    } else if (strcmp(cmd_buf, "hello") == 0) {
+        newline();
+        print("Hello! Welcome to MyKernel!", 0x0A);
+        newline();
+    } else if (strcmp(cmd_buf, "clear") == 0) {
+        shell_clear();
+    } else if (strcmp(cmd_buf, "about") == 0) {
+        newline();
+        print("MyKernel v0.1", 0x0B);
+        newline();
+        print("Built from scratch in C + Assembly", 0x0F);
+        newline();
+        print("Running on QEMU x86 virtual machine", 0x0F);
+        newline();
+        print("Developer: Minha", 0x0A);
+        newline();
+    } else if (strcmp(cmd_buf, "maths") == 0) {
+        newline();
+        print("2 + 2 = 4", 0x0F);  newline();
+        print("10 x 10 = 100", 0x0F); newline();
+        print("2026 / 2 = 1013", 0x0F); newline();
+    } else {
+        newline();
+        print("Unknown command: ", 0x04);
+        print(cmd_buf, 0x04);
+        newline();
+        print("Type 'help' for commands", 0x08);
+        newline();
+    }
+
+    // Reset buffer
+    cmd_len = 0;
+    cmd_buf[0] = 0;
+}
+
+void shell_putchar(char c) {
+    if (c == '\n') {
+        run_command();
+        newline();
+        print("> ", 0x0F);
+    } else if (c == '\b') {
+        if (cmd_len > 0) {
+            cmd_len--;
+            cmd_buf[cmd_len] = 0;
+        }
+    } else {
+        if (cmd_len < MAX_CMD - 1) {
+            cmd_buf[cmd_len] = c;
+            cmd_len++;
+        }
+    }
+}
+
+void shell_init() {
+    cmd_len = 0;
+    cmd_buf[0] = 0;
+}

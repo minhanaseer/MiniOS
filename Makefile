@@ -13,8 +13,11 @@ boot.o: boot/boot.asm
 kernel.o: kernel/kernel.c
 	$(CC) $(CFLAGS) -c kernel/kernel.c -o kernel.o
 
-kernel.bin: boot.o kernel.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o
+shell.o: kernel/shell.c
+	$(CC) $(CFLAGS) -c kernel/shell.c -o shell.o
+
+kernel.bin: boot.o kernel.o shell.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o
 
 clean:
 	rm -f *.o *.bin
