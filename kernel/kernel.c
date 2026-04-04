@@ -77,7 +77,7 @@ void kernel_main() {
 
     shell_init();
     print("> ", 0x0F);
-    pmm_init(65536);
+    pmm_init(0);
     unsigned char last_sc = 0;
     int hold_counter = 0;
     int key_held = 0;
