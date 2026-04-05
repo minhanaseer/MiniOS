@@ -25,8 +25,11 @@ fs.o: kernel/fs.c
 loader.o: kernel/loader.c
 	$(CC) $(CFLAGS) -c kernel/loader.c -o loader.o
 
-kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o fs.o loader.o
+fb.o: kernel/fb.c
+	$(CC) $(CFLAGS) -c kernel/fb.c -o fb.o
+
+kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o
 
 clean:
 	rm -f *.o *.bin
