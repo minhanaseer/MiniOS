@@ -1,134 +1,63 @@
+#include "../include/fb.h"
 #include "../include/shell.h"
 #include "../include/pmm.h"
 #include "../include/fs.h"
 #include "../include/loader.h"
-char* video = (char*) 0xb8000;
-int cursor = 0;
 
-static void scroll() {
-    // Move every line up by one
-    for (int i = 0; i < 24*80*2; i++) {
-        video[i] = video[i + 80*2];
-    }
-    // Clear last line
-    for (int i = 24*80*2; i < 25*80*2; i += 2) {
-        video[i]   = ' ';
-        video[i+1] = 0x07;
-    }
-    cursor = 24*80;
-}
+typedef unsigned int   uint32_t;
+typedef unsigned short uint16_t;
+typedef unsigned char  uint8_t;
 
-void clear() {
-    for (int i = 0; i < 80*25*2; i++) video[i] = 0;
-    cursor = 0;
-}
-
-void putchar(char c, char col) {
-    if (cursor >= 80*25) scroll();
-    video[cursor*2]   = c;
-    video[cursor*2+1] = col;
-    cursor++;
-}
-
-void print(const char* s, char col) {
-    for (int i = 0; s[i]; i++) putchar(s[i], col);
-}
-
-void newline() {
-    cursor = ((cursor/80)+1)*80;
-    if (cursor >= 80*25) scroll();
-}
-
-void backspace() {
-    if (cursor > 0) {
-        cursor--;
-        video[cursor*2]   = ' ';
-        video[cursor*2+1] = 0x07;
-    }
-}
-
-static unsigned char inb(unsigned short port) {
-    unsigned char r;
-    __asm__ volatile("inb %1,%0":"=a"(r):"Nd"(port));
-    return r;
-}
-
-static void wait() {
-    for (volatile int i = 0; i < 10000; i++);
-}
-
-static char sc_map[58] = {
-    0,  0,  '1','2','3','4','5','6','7','8','9','0','-','=',
-    0,  0,  'q','w','e','r','t','y','u','i','o','p','[',']',
-    '\n',0, 'a','s','d','f','g','h','j','k','l',';','\'','`',
-    0, '\\','z','x','c','v','b','n','m',',','.','/', 0,
-    '*', 0, ' '
+struct multiboot_info {
+    uint32_t flags;
+    uint32_t mem_lower;
+    uint32_t mem_upper;
+    uint32_t boot_device;
+    uint32_t cmdline;
+    uint32_t mods_count;
+    uint32_t mods_addr;
+    uint32_t syms[4];
+    uint32_t mmap_length;
+    uint32_t mmap_addr;
+    uint32_t drives_length;
+    uint32_t drives_addr;
+    uint32_t config_table;
+    uint32_t boot_loader_name;
+    uint32_t apm_table;
+    uint32_t vbe_control_info;
+    uint32_t vbe_mode_info;
+    uint16_t vbe_mode;
+    uint32_t fb_addr;
+    uint32_t fb_pitch;
+    uint32_t fb_width;
+    uint32_t fb_height;
+    uint8_t  fb_bpp;
 };
 
-void kernel_main() {
-    clear();
-    print("MyKernel v0.1", 0x0A);
-    newline();
-    print("Keyboard: OK", 0x0A);
-    newline();
-    print("Type 'help' for commands", 0x08);
-    newline();
-    print("----------------------------", 0x08);
-    newline();
+void kernel_main(uint32_t magic, struct multiboot_info* mb) {
+    (void)magic;
 
-    shell_init();
-    fs_init();
-    loader_init();
-    print("> ", 0x0F);
-    pmm_init(0);
-    unsigned char last_sc = 0;
-    int hold_counter = 0;
-    int key_held = 0;
+    uint32_t* fb = (uint32_t*) mb->fb_addr;
+    uint32_t  w  = mb->fb_width;
+    uint32_t  h  = mb->fb_height;
+    uint32_t  p  = mb->fb_pitch;
 
-    while (1) {
-        unsigned char status = inb(0x64);
-        if (!(status & 1)) continue;
+    fb_init(fb, w, h, p);
 
-        unsigned char sc = inb(0x60);
+    fb_clear(20, 30, 60);
+    fb_draw_rect(0, h-40, w, 40, 40, 40, 80);
+    fb_draw_rect(0, 0, w, 30, 30, 50, 100);
+    fb_draw_text("MyKernel v0.1", 10, 10, 255, 255, 255);
+    fb_draw_text("Phase 6 - Graphics Mode!", w/2 - 100, 10, 100, 220, 255);
+    fb_draw_rect(50, 50, w-100, h-120, 15, 15, 25);
+    fb_draw_rect(50, 50, w-100, 24, 60, 60, 120);
+    fb_draw_text("Terminal", 60, 57, 255, 255, 255);
+    fb_draw_rect(w-100, 50, 24, 24, 200, 50, 50);
+    fb_draw_text("X", w-94, 57, 255, 255, 255);
+    fb_draw_text("Welcome to MyKernel Graphics Mode!", 60, 90, 100, 255, 100);
+    fb_draw_text("Built from scratch in C + Assembly", 60, 105, 180, 180, 180);
+    fb_draw_text("Developer: Minha", 60, 120, 100, 200, 255);
+    fb_draw_text(">", 60, 145, 255, 255, 255);
 
-        if (sc & 0x80) {
-            unsigned char released = sc & 0x7F;
-            if (released == last_sc) {
-                last_sc = 0;
-                key_held = 0;
-                hold_counter = 0;
-            }
-            continue;
-        }
-
-        if (sc != last_sc) {
-            last_sc = sc;
-            key_held = 0;
-            hold_counter = 0;
-
-            if (sc == 0x0E) {
-                backspace();
-                shell_putchar('\b');
-            } else {
-                char c = (sc < 58) ? sc_map[sc] : 0;
-                if (c == '\n') {
-                    shell_putchar('\n');
-                } else if (c != 0) {
-                    putchar(c, 0x0F);
-                    shell_putchar(c);
-                }
-            }
-        } else {
-            hold_counter++;
-            if (hold_counter > 3000) key_held = 1;
-            if (key_held) {
-                char c = (sc < 58) ? sc_map[sc] : 0;
-                if (c != 0 && c != '\n') {
-                    putchar(c, 0x0F);
-                    shell_putchar(c);
-                    wait();
-                }
-            }
-        }
-    }
+    while(1) {}
 }
