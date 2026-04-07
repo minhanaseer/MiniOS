@@ -21,7 +21,11 @@ void clear() {
 }
 
 void putchar(char c, char col) {
-    if (cursor >= 80*25) cursor = 0;
+    if (cursor >= 80*25) { 
+        for (int i = 0; i < 24*80*2; i++) vga[i] = vga[i+80*2];
+        for (int i = 24*80*2; i < 25*80*2; i+=2) { vga[i]=' '; vga[i+1]=0x07; }
+        cursor = 24*80;
+    }
     vga[cursor*2]   = c;
     vga[cursor*2+1] = col;
     cursor++;
@@ -33,15 +37,7 @@ void print(const char* s, char col) {
 
 void newline() {
     cursor = ((cursor/80)+1)*80;
-    if (cursor >= 80*25) cursor = 0;
-}
-
-static void scroll() {
-    for (int i = 0; i < 24*80*2; i++) vga[i] = vga[i+80*2];
-    for (int i = 24*80*2; i < 25*80*2; i+=2) {
-        vga[i] = ' '; vga[i+1] = 0x07;
-    }
-    cursor = 24*80;
+    if (cursor >= 80*25) cursor = 24*80;
 }
 
 void backspace() {
@@ -99,38 +95,42 @@ struct mb_info {
 void kernel_main(uint32_t magic, struct mb_info* mb) {
     (void)magic;
 
-    uint32_t w = mb->fb_width;
-    uint32_t h = mb->fb_height;
+    uint32_t fb_addr  = mb->fb_addr;
+    uint32_t fb_w     = mb->fb_width;
+    uint32_t fb_h     = mb->fb_height;
+    uint32_t fb_pitch = mb->fb_pitch;
+    uint8_t  fb_bpp   = mb->fb_bpp;
 
-    if (mb->fb_addr && w > 0 && h > 0 && mb->fb_bpp == 32) {
-        uint32_t* fb = (uint32_t*)(mb->fb_addr);
-        fb_init(fb, w, h, mb->fb_pitch);
+    if (fb_addr != 0 && fb_w > 0 && fb_h > 0 && fb_bpp == 32) {
+        fb_init((uint32_t*)fb_addr, fb_w, fb_h, fb_pitch);
         fb_clear(20, 30, 60);
-        fb_draw_rect(0, 0, w, 30, 30, 50, 100);
-        fb_draw_rect(0, h-40, w, 40, 40, 40, 80);
-        fb_draw_text("MyKernel v0.1 - Graphics Mode!", 10, 10, 255, 255, 255);
-        fb_draw_rect(50, 50, w-100, h-120, 15, 15, 25);
-        fb_draw_rect(50, 50, w-100, 24, 60, 60, 120);
-        fb_draw_text("Terminal", 60, 57, 255, 255, 255);
-        fb_draw_rect(w-106, 52, 20, 20, 200, 50, 50);
-        fb_draw_text("X", w-102, 57, 255, 255, 255);
-        fb_draw_text("Welcome to MyKernel Graphics Mode!", 60, 90, 100, 255, 100);
-        fb_draw_text("Built from scratch in C + Assembly", 60, 106, 180, 180, 180);
-        fb_draw_text("Developer: Minha", 60, 122, 100, 200, 255);
-        fb_draw_text(">", 60, 150, 255, 255, 0);
+        fb_draw_rect(0, 0, fb_w, 30, 30, 50, 120);
+        fb_draw_rect(0, fb_h-40, fb_w, 40, 30, 40, 80);
+        fb_draw_text("MyKernel v0.1", 10, 10, 255, 255, 255);
+        fb_draw_text("Phase 6 - Graphics Mode!", 200, 10, 100, 220, 255);
+        fb_draw_rect(40, 45, fb_w-80, fb_h-110, 10, 10, 20);
+        fb_draw_rect(40, 45, fb_w-80, 22, 50, 50, 100);
+        fb_draw_text("Terminal - MyKernel", 50, 51, 200, 200, 255);
+        fb_draw_rect(fb_w-86, 47, 18, 18, 180, 40, 40);
+        fb_draw_text("X", fb_w-83, 51, 255, 255, 255);
+        fb_draw_text("Welcome to MyKernel Graphics Mode!", 50, 80, 80, 255, 80);
+        fb_draw_text("Built from scratch in C + Assembly", 50, 96, 160, 160, 160);
+        fb_draw_text("Developer: Minha Naseer", 50, 112, 80, 180, 255);
+        fb_draw_text("Phase 6 complete - pixels on screen!", 50, 128, 255, 200, 80);
+        fb_draw_text(">", 50, 155, 255, 255, 0);
         while(1) {}
     }
 
+    // Fallback to text mode
     clear();
     pmm_init(0);
     fs_init();
     loader_init();
     shell_init();
-
     print("MyKernel v0.1", 0x0A); newline();
-    print("Keyboard: OK", 0x0A);  newline();
-    print("Type 'help' for commands", 0x08); newline();
-    print("----------------------------", 0x08); newline();
+    print("Graphics mode not available - text mode", 0x0E); newline();
+    print("FB addr: ", 0x0F);
+    print(fb_addr ? "exists" : "zero!", 0x04); newline();
     print("> ", 0x0F);
 
     unsigned char last_sc = 0;
@@ -142,15 +142,15 @@ void kernel_main(uint32_t magic, struct mb_info* mb) {
         if (!(status & 1)) continue;
         unsigned char sc = inb(0x60);
         if (sc & 0x80) {
-            if ((sc & 0x7F) == last_sc) { last_sc = 0; key_held = 0; hold_counter = 0; }
+            if ((sc & 0x7F) == last_sc) { last_sc=0; key_held=0; hold_counter=0; }
             continue;
         }
         if (sc != last_sc) {
-            last_sc = sc; key_held = 0; hold_counter = 0;
+            last_sc=sc; key_held=0; hold_counter=0;
             if (sc == 0x0E) { backspace(); shell_putchar('\b'); }
             else {
                 char c = (sc < 58) ? sc_map[sc] : 0;
-                if (c == '\n') { shell_putchar('\n'); }
+                if (c == '\n') shell_putchar('\n');
                 else if (c) { putchar(c, 0x0F); shell_putchar(c); }
             }
         } else {
