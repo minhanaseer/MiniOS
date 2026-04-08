@@ -2,10 +2,6 @@ typedef unsigned int   uint32_t;
 typedef unsigned short uint16_t;
 typedef unsigned char  uint8_t;
 
-void fb_init(uint32_t* addr, uint32_t w, uint32_t h, uint32_t pitch);
-void fb_clear(uint8_t r, uint8_t g, uint8_t b);
-void fb_draw_rect(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t r, uint8_t g, uint8_t b);
-void fb_draw_text(const char* s, uint32_t x, uint32_t y, uint8_t r, uint8_t g, uint8_t b);
 void shell_init();
 void shell_putchar(char c);
 void pmm_init(uint32_t mem_size);
@@ -21,7 +17,7 @@ void clear() {
 }
 
 void putchar(char c, char col) {
-    if (cursor >= 80*25) { 
+    if (cursor >= 80*25) {
         for (int i = 0; i < 24*80*2; i++) vga[i] = vga[i+80*2];
         for (int i = 24*80*2; i < 25*80*2; i+=2) { vga[i]=' '; vga[i+1]=0x07; }
         cursor = 24*80;
@@ -46,6 +42,20 @@ void backspace() {
         vga[cursor*2]   = ' ';
         vga[cursor*2+1] = 0x07;
     }
+}
+
+static void print_hex(uint32_t n) {
+    char hex[] = "0123456789ABCDEF";
+    print("0x", 0x0F);
+    for (int i = 28; i >= 0; i -= 4)
+        putchar(hex[(n >> i) & 0xF], 0x0F);
+}
+
+static void print_num(uint32_t n) {
+    if (n == 0) { putchar('0', 0x0F); return; }
+    char buf[12]; int i = 0;
+    while (n > 0) { buf[i++] = '0'+(n%10); n/=10; }
+    for (int j=i-1;j>=0;j--) putchar(buf[j], 0x0F);
 }
 
 static unsigned char inb(unsigned short port) {
@@ -94,43 +104,28 @@ struct mb_info {
 
 void kernel_main(uint32_t magic, struct mb_info* mb) {
     (void)magic;
-
-    uint32_t fb_addr  = mb->fb_addr;
-    uint32_t fb_w     = mb->fb_width;
-    uint32_t fb_h     = mb->fb_height;
-    uint32_t fb_pitch = mb->fb_pitch;
-    uint8_t  fb_bpp   = mb->fb_bpp;
-
-    if (fb_addr != 0 && fb_w > 0 && fb_h > 0 && fb_bpp == 32) {
-        fb_init((uint32_t*)fb_addr, fb_w, fb_h, fb_pitch);
-        fb_clear(20, 30, 60);
-        fb_draw_rect(0, 0, fb_w, 30, 30, 50, 120);
-        fb_draw_rect(0, fb_h-40, fb_w, 40, 30, 40, 80);
-        fb_draw_text("MyKernel v0.1", 10, 10, 255, 255, 255);
-        fb_draw_text("Phase 6 - Graphics Mode!", 200, 10, 100, 220, 255);
-        fb_draw_rect(40, 45, fb_w-80, fb_h-110, 10, 10, 20);
-        fb_draw_rect(40, 45, fb_w-80, 22, 50, 50, 100);
-        fb_draw_text("Terminal - MyKernel", 50, 51, 200, 200, 255);
-        fb_draw_rect(fb_w-86, 47, 18, 18, 180, 40, 40);
-        fb_draw_text("X", fb_w-83, 51, 255, 255, 255);
-        fb_draw_text("Welcome to MyKernel Graphics Mode!", 50, 80, 80, 255, 80);
-        fb_draw_text("Built from scratch in C + Assembly", 50, 96, 160, 160, 160);
-        fb_draw_text("Developer: Minha Naseer", 50, 112, 80, 180, 255);
-        fb_draw_text("Phase 6 complete - pixels on screen!", 50, 128, 255, 200, 80);
-        fb_draw_text(">", 50, 155, 255, 255, 0);
-        while(1) {}
-    }
-
-    // Fallback to text mode
     clear();
+
+    print("=== MyKernel FB Debug ===", 0x0B); newline();
+
+    print("flags : ", 0x0F); print_hex(mb->flags);   newline();
+    print("fb_addr : ", 0x0F); print_hex(mb->fb_addr); newline();
+    print("fb_w  : ", 0x0F); print_num(mb->fb_width);  newline();
+    print("fb_h  : ", 0x0F); print_num(mb->fb_height); newline();
+    print("fb_bpp: ", 0x0F); print_num(mb->fb_bpp);    newline();
+    print("fb_pitch: ", 0x0F); print_num(mb->fb_pitch); newline();
+
+    newline();
+    print("If fb_addr is 0 = GRUB not passing framebuffer", 0x0E);
+    newline();
+    print("If fb_w is 0 = graphics mode not set", 0x0E);
+    newline();
+
     pmm_init(0);
     fs_init();
     loader_init();
     shell_init();
-    print("MyKernel v0.1", 0x0A); newline();
-    print("Graphics mode not available - text mode", 0x0E); newline();
-    print("FB addr: ", 0x0F);
-    print(fb_addr ? "exists" : "zero!", 0x04); newline();
+    newline();
     print("> ", 0x0F);
 
     unsigned char last_sc = 0;
