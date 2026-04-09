@@ -1,29 +1,32 @@
-typedef unsigned int   uint32_t;
-typedef unsigned short uint16_t;
-typedef unsigned char  uint8_t;
+#include "../include/shell.h"
+#include "../include/pmm.h"
+#include "../include/fs.h"
+#include "../include/loader.h"
+char* video = (char*) 0xb8000;
+int cursor = 0;
 
-void shell_init();
-void shell_putchar(char c);
-void pmm_init(uint32_t mem_size);
-void fs_init();
-void loader_init();
-
-static char* vga = (char*) 0xb8000;
-static int cursor = 0;
+static void scroll() {
+    // Move every line up by one
+    for (int i = 0; i < 24*80*2; i++) {
+        video[i] = video[i + 80*2];
+    }
+    // Clear last line
+    for (int i = 24*80*2; i < 25*80*2; i += 2) {
+        video[i]   = ' ';
+        video[i+1] = 0x07;
+    }
+    cursor = 24*80;
+}
 
 void clear() {
-    for (int i = 0; i < 80*25*2; i++) vga[i] = 0;
+    for (int i = 0; i < 80*25*2; i++) video[i] = 0;
     cursor = 0;
 }
 
 void putchar(char c, char col) {
-    if (cursor >= 80*25) {
-        for (int i = 0; i < 24*80*2; i++) vga[i] = vga[i+80*2];
-        for (int i = 24*80*2; i < 25*80*2; i+=2) { vga[i]=' '; vga[i+1]=0x07; }
-        cursor = 24*80;
-    }
-    vga[cursor*2]   = c;
-    vga[cursor*2+1] = col;
+    if (cursor >= 80*25) scroll();
+    video[cursor*2]   = c;
+    video[cursor*2+1] = col;
     cursor++;
 }
 
@@ -33,22 +36,15 @@ void print(const char* s, char col) {
 
 void newline() {
     cursor = ((cursor/80)+1)*80;
-    if (cursor >= 80*25) cursor = 24*80;
+    if (cursor >= 80*25) scroll();
 }
 
 void backspace() {
     if (cursor > 0) {
         cursor--;
-        vga[cursor*2]   = ' ';
-        vga[cursor*2+1] = 0x07;
+        video[cursor*2]   = ' ';
+        video[cursor*2+1] = 0x07;
     }
-}
-
-static void print_hex(uint32_t n) {
-    char hex[] = "0123456789ABCDEF";
-    print("0x", 0x0F);
-    for (int i = 28; i >= 0; i -= 4)
-        putchar(hex[(n >> i) & 0xF], 0x0F);
 }
 
 static unsigned char inb(unsigned short port) {
@@ -69,26 +65,22 @@ static char sc_map[58] = {
     '*', 0, ' '
 };
 
-void kernel_main(uint32_t magic, uint32_t mb_addr) {
+void kernel_main() {
     clear();
-    print("=== MyKernel Debug ===", 0x0B); newline();
-    print("magic: ", 0x0F); print_hex(magic); newline();
-    print("mb_addr: ", 0x0F); print_hex(mb_addr); newline();
-
-    if (magic != 0x2BADB002) {
-        print("ERROR: Bad multiboot magic!", 0x04); newline();
-    } else {
-        print("Multiboot OK!", 0x0A); newline();
-    }
-
+    print("MyKernel v0.1", 0x0A);
     newline();
-    pmm_init(0);
+    print("Keyboard: OK", 0x0A);
+    newline();
+    print("Type 'help' for commands", 0x08);
+    newline();
+    print("----------------------------", 0x08);
+    newline();
+
+    shell_init();
     fs_init();
     loader_init();
-    shell_init();
-    print("MyKernel v0.1 - Ready!", 0x0A); newline();
     print("> ", 0x0F);
-
+    pmm_init(0);
     unsigned char last_sc = 0;
     int hold_counter = 0;
     int key_held = 0;
@@ -96,25 +88,46 @@ void kernel_main(uint32_t magic, uint32_t mb_addr) {
     while (1) {
         unsigned char status = inb(0x64);
         if (!(status & 1)) continue;
+
         unsigned char sc = inb(0x60);
+
         if (sc & 0x80) {
-            if ((sc & 0x7F) == last_sc) { last_sc=0; key_held=0; hold_counter=0; }
+            unsigned char released = sc & 0x7F;
+            if (released == last_sc) {
+                last_sc = 0;
+                key_held = 0;
+                hold_counter = 0;
+            }
             continue;
         }
+
         if (sc != last_sc) {
-            last_sc=sc; key_held=0; hold_counter=0;
-            if (sc == 0x0E) { backspace(); shell_putchar('\b'); }
-            else {
+            last_sc = sc;
+            key_held = 0;
+            hold_counter = 0;
+
+            if (sc == 0x0E) {
+                backspace();
+                shell_putchar('\b');
+            } else {
                 char c = (sc < 58) ? sc_map[sc] : 0;
-                if (c == '\n') shell_putchar('\n');
-                else if (c) { putchar(c, 0x0F); shell_putchar(c); }
+                if (c == '\n') {
+                    shell_putchar('\n');
+                } else if (c != 0) {
+                    putchar(c, 0x0F);
+                    shell_putchar(c);
+                }
             }
         } else {
             hold_counter++;
             if (hold_counter > 3000) key_held = 1;
             if (key_held) {
                 char c = (sc < 58) ? sc_map[sc] : 0;
-                if (c && c != '\n') { putchar(c, 0x0F); shell_putchar(c); wait(); }
+                if (c != 0 && c != '\n') {
+                    putchar(c, 0x0F);
+                    shell_putchar(c);
+                    wait();
+                }
             }
         }
     }
