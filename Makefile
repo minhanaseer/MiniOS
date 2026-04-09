@@ -28,8 +28,10 @@ loader.o: kernel/loader.c
 fb.o: kernel/fb.c
 	$(CC) $(CFLAGS) -c kernel/fb.c -o fb.o
 
-kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o
+kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o
+	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o
 
 clean:
 	rm -f *.o *.bin
+vga.o: kernel/vga.c
+	$(CC) $(CFLAGS) -c kernel/vga.c -o vga.o

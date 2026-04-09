@@ -2,6 +2,7 @@
 #include "../include/fs.h"
 #include "../include/loader.h"
 #define MAX_CMD 80
+#include "../include/vga.h"
 
 static char cmd_buf[MAX_CMD];
 static int  cmd_len = 0;
@@ -22,7 +23,7 @@ static int strncmp(const char* a, const char* b, int n) {
 
 static int strlen(const char* s) {
     int i = 0;
-    while (s[i]) i++;
+    while (s[i]) i++; 
     return i;
 }
 
@@ -72,6 +73,13 @@ static void run_command() {
         newline();
         print("  del   [file.txt]  — delete file", 0x0F);
         newline();
+        print("  graphics — show graphics demo", 0x0F);
+        newline();
+    } else if (strcmp(cmd_buf, "graphics") == 0) {
+    vga_demo();
+    clear();
+    print("Back in text mode!", 0x0A);
+    newline();
 
     } else if (strcmp(cmd_buf, "hello") == 0) {
         newline();
@@ -141,6 +149,11 @@ static void run_command() {
             newline();
             fs_delete(filename);
         }
+    } else if (strcmp(cmd_buf, "graphics") == 0) {
+            vga_demo();
+            clear();
+            print("Back in text mode!", 0x0A);
+            newline();
     } else if (strncmp(cmd_buf, "run ", 4) == 0) {
         const char* progname = cmd_buf + 4;
         if (strlen(progname) == 0) {
