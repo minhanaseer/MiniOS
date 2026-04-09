@@ -4,6 +4,12 @@ static void outb(unsigned short port, unsigned char val) {
     __asm__ volatile("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
+static unsigned char inb(unsigned short port) {
+    unsigned char r;
+    __asm__ volatile("inb %1,%0":"=a"(r):"Nd"(port));
+    return r;
+}
+
 void vga_set_graphics() {
     outb(0x3C2, 0x63);
     outb(0x3D4, 0x00); outb(0x3D5, 0x5F);
@@ -64,12 +70,6 @@ void vga_set_graphics() {
     }
 }
 
-static unsigned char inb(unsigned short port) {
-    unsigned char r;
-    __asm__ volatile("inb %1,%0":"=a"(r):"Nd"(port));
-    return r;
-}
-
 void vga_set_text() {
     outb(0x3C2, 0x67);
     outb(0x3D4, 0x00); outb(0x3D5, 0x5F);
@@ -90,13 +90,11 @@ void vga_set_text() {
     outb(0x3D4, 0x15); outb(0x3D5, 0x96);
     outb(0x3D4, 0x16); outb(0x3D5, 0xB9);
     outb(0x3D4, 0x17); outb(0x3D5, 0xA3);
-
     outb(0x3C4, 0x00); outb(0x3C5, 0x03);
     outb(0x3C4, 0x01); outb(0x3C5, 0x00);
     outb(0x3C4, 0x02); outb(0x3C5, 0x03);
     outb(0x3C4, 0x03); outb(0x3C5, 0x00);
     outb(0x3C4, 0x04); outb(0x3C5, 0x02);
-
     outb(0x3CE, 0x05); outb(0x3CF, 0x10);
     outb(0x3CE, 0x06); outb(0x3CF, 0x0E);
 }
@@ -126,10 +124,8 @@ void vga_demo() {
     vga_draw_rect(120, 20, 100, 80, 2);
     vga_draw_rect(230, 20, 80, 80, 6);
     vga_draw_rect(10, 110, 300, 70, 3);
-
     for (int i = 0; i < 300; i += 3)
         vga_put_pixel(i, 100, (i/3) % 200 + 10);
-
     for (volatile int i = 0; i < 80000000; i++);
     vga_set_text();
 }
