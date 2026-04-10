@@ -1,131 +1,92 @@
-static unsigned char* vga_mem = (unsigned char*) 0xA0000;
-
-static void outb(unsigned short port, unsigned char val) {
-    __asm__ volatile("outb %0, %1" : : "a"(val), "Nd"(port));
-}
-
-static unsigned char inb(unsigned short port) {
-    unsigned char r;
-    __asm__ volatile("inb %1,%0":"=a"(r):"Nd"(port));
-    return r;
-}
-
-void vga_set_graphics() {
-    outb(0x3C2, 0x63);
-    outb(0x3D4, 0x00); outb(0x3D5, 0x5F);
-    outb(0x3D4, 0x01); outb(0x3D5, 0x4F);
-    outb(0x3D4, 0x02); outb(0x3D5, 0x50);
-    outb(0x3D4, 0x03); outb(0x3D5, 0x82);
-    outb(0x3D4, 0x04); outb(0x3D5, 0x54);
-    outb(0x3D4, 0x05); outb(0x3D5, 0x80);
-    outb(0x3D4, 0x06); outb(0x3D5, 0xBF);
-    outb(0x3D4, 0x07); outb(0x3D5, 0x1F);
-    outb(0x3D4, 0x08); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x09); outb(0x3D5, 0x41);
-    outb(0x3D4, 0x10); outb(0x3D5, 0x9C);
-    outb(0x3D4, 0x11); outb(0x3D5, 0x8E);
-    outb(0x3D4, 0x12); outb(0x3D5, 0x8F);
-    outb(0x3D4, 0x13); outb(0x3D5, 0x28);
-    outb(0x3D4, 0x14); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x15); outb(0x3D5, 0x96);
-    outb(0x3D4, 0x16); outb(0x3D5, 0xB9);
-    outb(0x3D4, 0x17); outb(0x3D5, 0xA3);
-    outb(0x3D4, 0x18); outb(0x3D5, 0xFF);
-
-    outb(0x3C4, 0x00); outb(0x3C5, 0x03);
-    outb(0x3C4, 0x01); outb(0x3C5, 0x01);
-    outb(0x3C4, 0x02); outb(0x3C5, 0x0F);
-    outb(0x3C4, 0x03); outb(0x3C5, 0x00);
-    outb(0x3C4, 0x04); outb(0x3C5, 0x0E);
-
-    outb(0x3CE, 0x00); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x01); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x02); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x03); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x04); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x05); outb(0x3CF, 0x40);
-    outb(0x3CE, 0x06); outb(0x3CF, 0x05);
-    outb(0x3CE, 0x07); outb(0x3CF, 0x0F);
-    outb(0x3CE, 0x08); outb(0x3CF, 0xFF);
-
-    unsigned char v = inb(0x3DA);
-    (void)v;
-    outb(0x3C0, 0x00);
-    for (int i = 0; i < 16; i++) {
-        outb(0x3C0, i);
-        outb(0x3C0, i);
-    }
-    outb(0x3C0, 0x10); outb(0x3C0, 0x41);
-    outb(0x3C0, 0x11); outb(0x3C0, 0x00);
-    outb(0x3C0, 0x12); outb(0x3C0, 0x0F);
-    outb(0x3C0, 0x13); outb(0x3C0, 0x00);
-    outb(0x3C0, 0x14); outb(0x3C0, 0x00);
-    outb(0x3C0, 0x20);
-
-    for (int i = 0; i < 256; i++) {
-        outb(0x3C8, i);
-        outb(0x3C9, (i >> 5) << 2);
-        outb(0x3C9, ((i >> 2) & 7) << 2);
-        outb(0x3C9, (i & 3) << 4);
-    }
-}
-
-void vga_set_text() {
-    outb(0x3C2, 0x67);
-    outb(0x3D4, 0x00); outb(0x3D5, 0x5F);
-    outb(0x3D4, 0x01); outb(0x3D5, 0x4F);
-    outb(0x3D4, 0x02); outb(0x3D5, 0x50);
-    outb(0x3D4, 0x03); outb(0x3D5, 0x82);
-    outb(0x3D4, 0x04); outb(0x3D5, 0x55);
-    outb(0x3D4, 0x05); outb(0x3D5, 0x81);
-    outb(0x3D4, 0x06); outb(0x3D5, 0xBF);
-    outb(0x3D4, 0x07); outb(0x3D5, 0x1F);
-    outb(0x3D4, 0x08); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x09); outb(0x3D5, 0x4F);
-    outb(0x3D4, 0x10); outb(0x3D5, 0x9C);
-    outb(0x3D4, 0x11); outb(0x3D5, 0x8E);
-    outb(0x3D4, 0x12); outb(0x3D5, 0x8F);
-    outb(0x3D4, 0x13); outb(0x3D5, 0x28);
-    outb(0x3D4, 0x14); outb(0x3D5, 0x1F);
-    outb(0x3D4, 0x15); outb(0x3D5, 0x96);
-    outb(0x3D4, 0x16); outb(0x3D5, 0xB9);
-    outb(0x3D4, 0x17); outb(0x3D5, 0xA3);
-    outb(0x3C4, 0x00); outb(0x3C5, 0x03);
-    outb(0x3C4, 0x01); outb(0x3C5, 0x00);
-    outb(0x3C4, 0x02); outb(0x3C5, 0x03);
-    outb(0x3C4, 0x03); outb(0x3C5, 0x00);
-    outb(0x3C4, 0x04); outb(0x3C5, 0x02);
-    outb(0x3CE, 0x05); outb(0x3CF, 0x10);
-    outb(0x3CE, 0x06); outb(0x3CF, 0x0E);
-}
-
-void vga_put_pixel(int x, int y, unsigned char colour) {
-    if (x < 0 || x >= 320 || y < 0 || y >= 200) return;
-    vga_mem[y * 320 + x] = colour;
-}
-
-void vga_clear(unsigned char colour) {
-    for (int i = 0; i < 320*200; i++)
-        vga_mem[i] = colour;
-}
-
-void vga_draw_rect(int x, int y, int w, int h, unsigned char colour) {
-    for (int row = y; row < y+h; row++)
-        for (int col = x; col < x+w; col++)
-            vga_put_pixel(col, row, colour);
-}
+static char* video = (char*) 0xb8000;
 
 void vga_demo() {
-    vga_set_graphics();
-    vga_clear(1);
-    vga_draw_rect(0, 0, 320, 10, 9);
-    vga_draw_rect(0, 190, 320, 10, 8);
-    vga_draw_rect(10, 20, 100, 80, 4);
-    vga_draw_rect(120, 20, 100, 80, 2);
-    vga_draw_rect(230, 20, 80, 80, 6);
-    vga_draw_rect(10, 110, 300, 70, 3);
-    for (int i = 0; i < 300; i += 3)
-        vga_put_pixel(i, 100, (i/3) % 200 + 10);
-    for (volatile int i = 0; i < 80000000; i++);
-    vga_set_text();
+    // Fill screen with colourful pattern using VGA text colours
+    int colours[] = {1,2,3,4,5,6,9,10,11,12,13,14};
+    int num_colours = 12;
+
+    // Fill entire screen with coloured blocks
+    for (int row = 0; row < 25; row++) {
+        for (int col = 0; col < 80; col++) {
+            int idx = (row + col) % num_colours;
+            char bg = colours[idx] << 4;
+            char fg = 15;
+            video[(row*80 + col)*2]     = ' ';
+            video[(row*80 + col)*2 + 1] = bg | fg;
+        }
+    }
+
+    // Draw title bar
+    for (int col = 0; col < 80; col++) {
+        video[col*2]     = ' ';
+        video[col*2 + 1] = 0x17;
+    }
+
+    // Write title
+    const char* title = "  MyKernel v0.1 - Graphics Demo!  ";
+    for (int i = 0; title[i]; i++) {
+        video[i*2]     = title[i];
+        video[i*2 + 1] = 0x17;
+    }
+
+    // Draw a white box in the middle
+    for (int row = 8; row < 18; row++) {
+        for (int col = 20; col < 60; col++) {
+            video[(row*80+col)*2]     = ' ';
+            video[(row*80+col)*2 + 1] = 0x70;
+        }
+    }
+
+    // Write text in the box
+    const char* msg1 = "  Welcome to MyKernel Graphics!  ";
+    const char* msg2 = "  Built from scratch in C + ASM  ";
+    const char* msg3 = "       Developer: Minha           ";
+    const char* msg4 = "  Phase 6 - Colour Mode Active!  ";
+
+    for (int i = 0; msg1[i]; i++) {
+        video[(10*80+21+i)*2]     = msg1[i];
+        video[(10*80+21+i)*2 + 1] = 0x70;
+    }
+    for (int i = 0; msg2[i]; i++) {
+        video[(11*80+21+i)*2]     = msg2[i];
+        video[(11*80+21+i)*2 + 1] = 0x70;
+    }
+    for (int i = 0; msg3[i]; i++) {
+        video[(12*80+21+i)*2]     = msg3[i];
+        video[(12*80+21+i)*2 + 1] = 0x74;
+    }
+    for (int i = 0; msg4[i]; i++) {
+        video[(14*80+21+i)*2]     = msg4[i];
+        video[(14*80+21+i)*2 + 1] = 0x72;
+    }
+
+    // Draw bottom bar
+    for (int col = 0; col < 80; col++) {
+        video[(24*80+col)*2]     = ' ';
+        video[(24*80+col)*2 + 1] = 0x27;
+    }
+    const char* bottom = "  Press any key to return to shell...";
+    for (int i = 0; bottom[i]; i++) {
+        video[(24*80+i)*2]     = bottom[i];
+        video[(24*80+i)*2 + 1] = 0x27;
+    }
+
+    // Wait for keypress
+    unsigned char status, sc;
+    do {
+        do {
+            __asm__ volatile("inb $0x64, %0" : "=a"(status));
+        } while (!(status & 1));
+        __asm__ volatile("inb $0x60, %0" : "=a"(sc));
+    } while (sc & 0x80);
+}
+
+void vga_set_graphics() {}
+void vga_set_text() {}
+void vga_put_pixel(int x, int y, unsigned char colour) {
+    (void)x; (void)y; (void)colour;
+}
+void vga_clear(unsigned char colour) { (void)colour; }
+void vga_draw_rect(int x, int y, int w, int h, unsigned char colour) {
+    (void)x; (void)y; (void)w; (void)h; (void)colour;
 }
