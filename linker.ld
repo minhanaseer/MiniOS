@@ -3,8 +3,8 @@ ENTRY(start)
 SECTIONS {
     . = 1M;
 
-    .multiboot2 ALIGN(8) : {
-        *(.multiboot2)
+    .multiboot ALIGN(4) : {
+        *(.multiboot)
     }
 
     .text ALIGN(4) : {

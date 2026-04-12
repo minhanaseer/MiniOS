@@ -1,25 +1,14 @@
-section .multiboot2
-align 8
+MBALIGN  equ 1 << 0
+MEMINFO  equ 1 << 1
+FLAGS    equ MBALIGN | MEMINFO
+MAGIC    equ 0x1BADB002
+CHECKSUM equ -(MAGIC + FLAGS)
 
-mb2_header_start:
-    dd 0xE85250D6
-    dd 0
-    dd mb2_header_end - mb2_header_start
-    dd -(0xE85250D6 + 0 + (mb2_header_end - mb2_header_start))
-
-    align 8
-    dw 5
-    dw 0
-    dd 20
-    dd 800
-    dd 600
-    dd 32
-
-    align 8
-    dw 0
-    dw 0
-    dd 8
-mb2_header_end:
+section .multiboot
+align 4
+    dd MAGIC
+    dd FLAGS
+    dd CHECKSUM
 
 section .bss
 align 16
@@ -33,8 +22,6 @@ extern kernel_main
 
 start:
     mov esp, stack_top
-    push ebx
-    push eax
     call kernel_main
     cli
 .hang:
