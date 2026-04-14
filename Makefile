@@ -39,3 +39,5 @@ kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o pixel.o
 
 clean:
 	rm -f *.o *.bin
+
+// This Makefile compiles the kernel and its components into a binary file named kernel.bin. It uses the x86_64-elf-gcc compiler for C files and nasm for assembly files. The linker is used to combine all object files into the final binary. The clean target removes all generated object files and the binary.
