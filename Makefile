@@ -37,7 +37,14 @@ pixel.o: kernel/pixel.c
 kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o pixel.o
 	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o pixel.o
 
+iso: kernel.bin
+	cp kernel.bin isodir/boot/kernel.bin
+	i686-elf-grub-mkrescue -o mykernel.iso isodir
+
+run: iso
+	qemu-system-i386 -cdrom mykernel.iso
+
 clean:
-	rm -f *.o *.bin
+	rm -f *.o *.bin mykernel.iso
 
 # Compiles kernel.bin from boot + kernel + shell + pmm + fs + loader + fb + vga + pixel
