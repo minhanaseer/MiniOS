@@ -131,8 +131,7 @@ static void run_command() {
 
     } else if (strcmp(cmd_buf, "graphics") == 0) {
         vga_demo();
-        newline();
-        print("Graphics demo done!", 0x0A); newline();
+        shell_clear();
 
     } else {
         newline();
