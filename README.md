@@ -86,7 +86,7 @@ MyKernel/
 
 ---
 
-## Developer
+## Developer  
 
 **Minha Naseer** — Built from scratch using C + x86 Assembly  
 Running on QEMU x86 virtual machine
