@@ -1,5 +1,4 @@
-typedef unsigned int   uint32_t;
-typedef unsigned char  uint8_t;
+#include <stdint.h>
 
 static uint32_t* fb      = 0;
 static uint32_t  fb_w    = 0;

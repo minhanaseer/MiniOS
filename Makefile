@@ -1,8 +1,8 @@
-CC = x86_64-elf-gcc
-LD = x86_64-elf-ld
+CC  = x86_64-elf-gcc
+LD  = x86_64-elf-ld
 ASM = nasm
 
-CFLAGS = -ffreestanding -O2 -m32
+CFLAGS  = -ffreestanding -O2 -m32
 LDFLAGS = -nostdlib -T linker.ld -m elf_i386
 
 all: kernel.bin
@@ -10,8 +10,23 @@ all: kernel.bin
 boot.o: boot/boot.asm
 	$(ASM) -f elf32 boot/boot.asm -o boot.o
 
+gdt_flush.o: boot/gdt_flush.asm
+	$(ASM) -f elf32 boot/gdt_flush.asm -o gdt_flush.o
+
+isr_asm.o: boot/isr.asm
+	$(ASM) -f elf32 boot/isr.asm -o isr_asm.o
+
 kernel.o: kernel/kernel.c
 	$(CC) $(CFLAGS) -c kernel/kernel.c -o kernel.o
+
+gdt.o: kernel/gdt.c
+	$(CC) $(CFLAGS) -c kernel/gdt.c -o gdt.o
+
+idt.o: kernel/idt.c
+	$(CC) $(CFLAGS) -c kernel/idt.c -o idt.o
+
+isr.o: kernel/isr.c
+	$(CC) $(CFLAGS) -c kernel/isr.c -o isr.o
 
 shell.o: kernel/shell.c
 	$(CC) $(CFLAGS) -c kernel/shell.c -o shell.o
@@ -34,8 +49,13 @@ vga.o: kernel/vga.c
 pixel.o: kernel/pixel.c
 	$(CC) $(CFLAGS) -c kernel/pixel.c -o pixel.o
 
-kernel.bin: boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o pixel.o
-	$(LD) $(LDFLAGS) -o kernel.bin boot.o kernel.o shell.o pmm.o fs.o loader.o fb.o vga.o pixel.o
+OBJS = boot.o gdt_flush.o isr_asm.o \
+       kernel.o gdt.o idt.o isr.o \
+       shell.o pmm.o fs.o loader.o \
+       fb.o vga.o pixel.o
+
+kernel.bin: $(OBJS)
+	$(LD) $(LDFLAGS) -o kernel.bin $(OBJS)
 
 iso: kernel.bin
 	cp kernel.bin isodir/boot/kernel.bin
@@ -46,5 +66,3 @@ run: iso
 
 clean:
 	rm -f *.o *.bin mykernel.iso
-
-# Compiles kernel.bin from boot + kernel + shell + pmm + fs + loader + fb + vga + pixel

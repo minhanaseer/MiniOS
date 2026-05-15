@@ -1,4 +1,4 @@
-typedef unsigned int uint32_t;
+#include <stdint.h>
 
 extern void print(const char* s, char col);
 extern void newline();

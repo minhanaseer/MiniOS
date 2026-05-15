@@ -1,7 +1,7 @@
 #ifndef PMM_H
 #define PMM_H
 
-typedef unsigned int uint32_t;
+#include <stdint.h>
 
 void  pmm_init(uint32_t mem_size);
 void* pmm_alloc();

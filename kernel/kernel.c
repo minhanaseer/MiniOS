@@ -1,3 +1,5 @@
+#include "../include/gdt.h"
+#include "../include/idt.h"
 #include "../include/shell.h"
 #include "../include/pmm.h"
 #include "../include/fs.h"
@@ -66,6 +68,8 @@ static char sc_map[58] = {
 };
 
 void kernel_main() {
+    gdt_install();
+    idt_install();
     clear();
     print("MyKernel v0.1", 0x0A);
     newline();
