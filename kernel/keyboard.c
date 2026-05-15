@@ -1,64 +1,69 @@
 #include "../include/keyboard.h"
+#include "../include/irq.h"
+#include "../include/pic.h"
 
-static char* video = (char*) 0xb8000;
-static int cursor = 160;
+static int shift_held = 0;
 
-static unsigned char port_read(unsigned short port) {
-    unsigned char result;
-    __asm__("inb %1, %0" : "=a"(result) : "Nd"(port));
-    return result;
+/* Unshifted layout */
+static const char sc_normal[58] = {
+    0,   0,  '1','2','3','4','5','6','7','8','9','0','-','=',
+    0,   0,  'q','w','e','r','t','y','u','i','o','p','[',']',
+    '\n',0,  'a','s','d','f','g','h','j','k','l',';','\'','`',
+    0,  '\\','z','x','c','v','b','n','m',',','.','/', 0,
+    '*', 0,  ' '
+};
+
+/* Shifted layout (same indices, different characters) */
+static const char sc_shift[58] = {
+    0,   0,  '!','@','#','$','%','^','&','*','(',')','_','+',
+    0,   0,  'Q','W','E','R','T','Y','U','I','O','P','{','}',
+    '\n',0,  'A','S','D','F','G','H','J','K','L',':','"','~',
+    0,  '|', 'Z','X','C','V','B','N','M','<','>','?', 0,
+    '*', 0,  ' '
+};
+
+extern void putchar(char c, char col);
+extern void backspace(void);
+extern void shell_putchar(char c);
+
+static unsigned char inb(unsigned short port) {
+    unsigned char r;
+    __asm__ volatile("inb %1, %0" : "=a"(r) : "Nd"(port));
+    return r;
 }
 
-static void port_write(unsigned short port, unsigned char data) {
-    __asm__("outb %0, %1" : : "a"(data), "Nd"(port));
-}
+static void keyboard_handler(registers_t* regs) {
+    (void)regs;
+    unsigned char sc = inb(0x60);
 
-static char sc_to_char(unsigned char sc) {
-    char keys[58] = {
-        0, 0, '1','2','3','4','5','6','7','8','9','0','-','=',
-        0, 0, 'q','w','e','r','t','y','u','i','o','p','[',']',
-        '\n', 0, 'a','s','d','f','g','h','j','k','l',';','\'','`',
-        0,'\\','z','x','c','v','b','n','m',',','.','/', 0,
-        '*', 0, ' '
-    };
-    if (sc < 58) return keys[sc];
-    return 0;
-}
-
-void keyboard_handler() {
-    unsigned char sc = port_read(0x60);
-    if (!(sc & 0x80)) {
-        char c = sc_to_char(sc);
-        if (c == '\n') {
-            cursor = ((cursor / 80) + 1) * 80;
-            if (cursor >= 80*25) cursor = 0;
-            video[cursor*2]   = '>';
-            video[cursor*2+1] = 0x0F;
-            cursor++;
-            video[cursor*2]   = ' ';
-            video[cursor*2+1] = 0x0F;
-            cursor++;
-        } else if (c != 0) {
-            if (cursor < 80*25) {
-                video[cursor*2]   = c;
-                video[cursor*2+1] = 0x0F;
-                cursor++;
-            }
-        }
+    /* Key release: bit 7 set */
+    if (sc & 0x80) {
+        unsigned char rel = sc & 0x7F;
+        if (rel == 0x2A || rel == 0x36)
+            shift_held = 0;
+        return;
     }
-    port_write(0x20, 0x20);
+
+    /* Left shift = 0x2A, Right shift = 0x36 */
+    if (sc == 0x2A || sc == 0x36) { shift_held = 1; return; }
+
+    /* Backspace = 0x0E */
+    if (sc == 0x0E) {
+        backspace();
+        shell_putchar('\b');
+        return;
+    }
+
+    char c = (sc < 58) ? (shift_held ? sc_shift[sc] : sc_normal[sc]) : 0;
+    if (c == '\n') {
+        shell_putchar('\n');
+    } else if (c != 0) {
+        putchar(c, 0x0F);
+        shell_putchar(c);
+    }
 }
 
-void keyboard_install() {
-    port_write(0x20, 0x11);
-    port_write(0xA0, 0x11);
-    port_write(0x21, 0x20);
-    port_write(0xA1, 0x28);
-    port_write(0x21, 0x04);
-    port_write(0xA1, 0x02);
-    port_write(0x21, 0x01);
-    port_write(0xA1, 0x01);
-    port_write(0x21, 0xFD);
-    port_write(0xA1, 0xFF);
-    __asm__("sti");
+void keyboard_init(void) {
+    irq_register(1, keyboard_handler);
+    pic_unmask_irq(1);
 }

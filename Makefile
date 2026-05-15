@@ -7,6 +7,7 @@ LDFLAGS = -nostdlib -T linker.ld -m elf_i386
 
 all: kernel.bin
 
+# --- Assembly ---
 boot.o: boot/boot.asm
 	$(ASM) -f elf32 boot/boot.asm -o boot.o
 
@@ -16,6 +17,10 @@ gdt_flush.o: boot/gdt_flush.asm
 isr_asm.o: boot/isr.asm
 	$(ASM) -f elf32 boot/isr.asm -o isr_asm.o
 
+irq_asm.o: boot/irq.asm
+	$(ASM) -f elf32 boot/irq.asm -o irq_asm.o
+
+# --- C kernel ---
 kernel.o: kernel/kernel.c
 	$(CC) $(CFLAGS) -c kernel/kernel.c -o kernel.o
 
@@ -27,6 +32,15 @@ idt.o: kernel/idt.c
 
 isr.o: kernel/isr.c
 	$(CC) $(CFLAGS) -c kernel/isr.c -o isr.o
+
+pic.o: kernel/pic.c
+	$(CC) $(CFLAGS) -c kernel/pic.c -o pic.o
+
+irq.o: kernel/irq.c
+	$(CC) $(CFLAGS) -c kernel/irq.c -o irq.o
+
+keyboard.o: kernel/keyboard.c
+	$(CC) $(CFLAGS) -c kernel/keyboard.c -o keyboard.o
 
 shell.o: kernel/shell.c
 	$(CC) $(CFLAGS) -c kernel/shell.c -o shell.o
@@ -49,8 +63,10 @@ vga.o: kernel/vga.c
 pixel.o: kernel/pixel.c
 	$(CC) $(CFLAGS) -c kernel/pixel.c -o pixel.o
 
-OBJS = boot.o gdt_flush.o isr_asm.o \
+# --- Link ---
+OBJS = boot.o gdt_flush.o isr_asm.o irq_asm.o \
        kernel.o gdt.o idt.o isr.o \
+       pic.o irq.o keyboard.o \
        shell.o pmm.o fs.o loader.o \
        fb.o vga.o pixel.o
 
