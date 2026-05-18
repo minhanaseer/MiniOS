@@ -1,19 +1,23 @@
 # MyKernel
 
-A custom x86 operating system built from scratch in C and Assembly, inspired by macOS and Windows.
+A custom x86 32-bit operating system built from scratch in C and Assembly, bootable via GRUB on QEMU.
 
 ---
 
-## Phases Completed
+## What's Built
 
 | Phase | Feature | Files |
 |-------|---------|-------|
-| 1 | Foundation — boot, VGA text, keyboard | `boot/boot.asm`, `kernel/kernel.c`, `Makefile`, `grub.cfg` |
-| 2 | Hardware — GDT setup | `kernel/gdt.c`, `include/gdt.h` |
-| 3 | Shell — interactive command line | `kernel/shell.c`, `include/shell.h` |
-| 4 | Memory — physical memory manager, heap | `kernel/pmm.c`, `include/pmm.h` |
-| 5 | Programs — file system + program loader | `kernel/fs.c`, `kernel/loader.c`, `include/fs.h`, `include/loader.h` |
-| 6 | Graphics — VGA demo, framebuffer driver, pixel engine | `kernel/vga.c`, `kernel/fb.c`, `kernel/pixel.c` |
+| 1 | Boot — Multiboot header, GRUB, loads at 1MB | `boot/boot.asm`, `linker.ld`, `isodir/boot/grub/grub.cfg` |
+| 2 | VGA text output + keyboard input | `kernel/kernel.c`, `kernel/vga.c` |
+| 3 | GDT — Global Descriptor Table, loaded via `gdt_flush` | `kernel/gdt.c`, `boot/gdt_flush.asm` |
+| 4 | IDT — Interrupt Descriptor Table | `kernel/idt.c` |
+| 5 | PIC — 8259A remapped, IRQ dispatch system | `kernel/pic.c`, `kernel/irq.c`, `boot/irq.asm` |
+| 6 | CPU exception handlers (ISRs 0–31) — panic + halt on any exception | `kernel/isr.c`, `boot/isr.asm` |
+| 7 | Interactive shell | `kernel/shell.c` |
+| 8 | RAM filesystem — flat store, 16 files, 256 bytes each | `kernel/fs.c` |
+| 9 | Built-in program loader | `kernel/loader.c` |
+| 10 | VGA graphics demo — color windowed UI in text mode | `kernel/vga.c` |
 
 ---
 
@@ -32,7 +36,7 @@ A custom x86 operating system built from scratch in C and Assembly, inspired by 
 | `read [file]` | Read a file |
 | `del [file]` | Delete a file |
 | `run [program]` | Run a built-in program (`hello`, `count`, `info`, `banner`) |
-| `graphics` | Launch the graphics demo screen |
+| `graphics` | Launch the graphics demo |
 
 ---
 
@@ -45,17 +49,10 @@ A custom x86 operating system built from scratch in C and Assembly, inspired by 
 - `qemu-system-i386` — emulator
 
 ```bash
-# Build kernel binary
-make
-
-# Build bootable ISO
-make iso
-
-# Build and launch in QEMU
-make run
-
-# Clean build files
-make clean
+make        # Build kernel binary
+make iso    # Build bootable ISO
+make run    # Build and launch in QEMU
+make clean  # Clean build files
 ```
 
 ---
@@ -65,28 +62,34 @@ make clean
 ```
 MyKernel/
 ├── boot/
-│   └── boot.asm          # Multiboot header + entry point
+│   ├── boot.asm          # Multiboot header + kernel entry point
+│   ├── gdt_flush.asm     # Loads GDT register (lgdt + far jump)
+│   ├── isr.asm           # ISR stubs for CPU exceptions 0–31
+│   └── irq.asm           # IRQ stubs for hardware interrupts 0–15
 ├── kernel/
-│   ├── kernel.c          # Kernel main, VGA text output, keyboard
-│   ├── shell.c           # Interactive shell
+│   ├── kernel.c          # Kernel main — wires up GDT, IDT, PIC, shell
 │   ├── gdt.c             # Global Descriptor Table
 │   ├── idt.c             # Interrupt Descriptor Table
-│   ├── pmm.c             # Physical memory manager
-│   ├── fs.c              # Simple RAM file system
+│   ├── pic.c             # 8259A PIC init + EOI
+│   ├── isr.c             # CPU exception handler (panic + halt)
+│   ├── irq.c             # Hardware IRQ dispatch
+│   ├── shell.c           # Interactive command-line shell
+│   ├── keyboard.c        # Keyboard driver
+│   ├── fs.c              # RAM-based flat filesystem
 │   ├── loader.c          # Built-in program loader
-│   ├── fb.c              # Framebuffer / pixel drawing
-│   ├── vga.c             # VGA graphics demo
-│   └── pixel.c           # Pixel engine
+│   ├── vga.c             # VGA text mode + graphics demo
+│   ├── fb.c              # Framebuffer driver (in progress)
+│   ├── pixel.c           # Pixel engine (in progress)
+│   └── pmm.c             # Physical memory manager (in progress)
 ├── include/              # Header files
 ├── isodir/               # ISO directory for GRUB
-│   └── boot/grub/grub.cfg
-├── linker.ld             # Linker script
+├── linker.ld             # Linker script (loads kernel at 1MB)
 └── Makefile
 ```
 
 ---
 
-## Developer  
+## Developer
 
-**Minha Naseer** — Built from scratch using C + x86 Assembly  
-Running on QEMU x86 virtual machine
+**Minha Naseer** — Built from scratch in C + x86 Assembly  
+Running on QEMU x86 (i386) virtual machine
