@@ -50,7 +50,8 @@ void backspace() {
     }
 }
 
-void kernel_main() {
+void kernel_main(uint32_t mb_magic, uint32_t mb_info_addr) {
+    (void)mb_magic;
     gdt_install();   /* load our own GDT                      */
     idt_install();   /* install exception + IRQ gates         */
     pic_init();      /* remap PIC, mask all IRQs              */

@@ -22,6 +22,8 @@ extern kernel_main
 
 start:
     mov esp, stack_top
+    push ebx        ; Multiboot info pointer (arg 2)
+    push eax        ; Multiboot magic (arg 1)
     call kernel_main
     cli
 .hang:
