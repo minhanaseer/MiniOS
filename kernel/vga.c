@@ -26,7 +26,7 @@ void vga_demo() {
 
     vga_fill_row(0, ' ', 0x70);
     vga_text(0, 2,  "MyKernel v0.1", 0x70);
-    vga_text(0, 35, "Phase 6 - Graphics Mode", 0x70);
+    vga_text(0, 35, "Graphics Demo", 0x70);
     vga_text(0, 72, "04/2026", 0x70);
 
     for (int row = 2; row < 20; row++)
@@ -36,12 +36,10 @@ void vga_demo() {
     vga_text(2, 7,  "Terminal - MyKernel", 0x1F);
     vga_text(2, 47, "X", 0x4F);
 
-    vga_text(4,  7, "MyKernel v0.1 - Graphics Mode!", 0x0A);
+    vga_text(4,  7, "MyKernel v0.1", 0x0A);
     vga_text(5,  7, "Built from scratch in C + Assembly", 0x07);
     vga_text(6,  7, "Developer: Minha Naseer", 0x0B);
     vga_text(7,  7, "Running on QEMU x86 virtual machine", 0x07);
-    vga_text(9,  7, "Phase 6 complete!", 0x0E);
-    vga_text(10, 7, "Graphics mode is now working!", 0x0E);
     vga_text(12, 7, "> ", 0x0F);
 
     for (int row = 2; row < 20; row++)

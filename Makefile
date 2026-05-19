@@ -2,7 +2,7 @@ CC  = x86_64-elf-gcc
 LD  = x86_64-elf-ld
 ASM = nasm
 
-CFLAGS  = -ffreestanding -O2 -m32
+CFLAGS  = -ffreestanding -O2 -m32 -mno-sse -mno-sse2 -mno-mmx -mno-avx
 LDFLAGS = -nostdlib -T linker.ld -m elf_i386
 
 all: kernel.bin
