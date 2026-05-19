@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "../include/gdt.h"
 #include "../include/idt.h"
 #include "../include/pic.h"
@@ -69,7 +70,7 @@ void kernel_main(uint32_t mb_magic, uint32_t mb_info_addr) {
     shell_init();
     fs_init();
     loader_init();
-    pmm_init(0);
+    pmm_init(mb_info_addr);
     print("> ", 0x0F);
 
     /* Enable hardware interrupts and sleep until the next one fires.
