@@ -6,6 +6,7 @@
 #include "../include/keyboard.h"
 #include "../include/shell.h"
 #include "../include/pmm.h"
+#include "../include/heap.h"
 #include "../include/fs.h"
 #include "../include/loader.h"
 
@@ -71,6 +72,7 @@ void kernel_main(uint32_t mb_magic, uint32_t mb_info_addr) {
     fs_init();
     loader_init();
     pmm_init(mb_info_addr);
+    heap_init();
     print("> ", 0x0F);
 
     /* Enable hardware interrupts and sleep until the next one fires.

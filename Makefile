@@ -48,6 +48,9 @@ shell.o: kernel/shell.c
 pmm.o: kernel/pmm.c
 	$(CC) $(CFLAGS) -c kernel/pmm.c -o pmm.o
 
+heap.o: kernel/heap.c
+	$(CC) $(CFLAGS) -c kernel/heap.c -o heap.o
+
 fs.o: kernel/fs.c
 	$(CC) $(CFLAGS) -c kernel/fs.c -o fs.o
 
@@ -67,7 +70,7 @@ pixel.o: kernel/pixel.c
 OBJS = boot.o gdt_flush.o isr_asm.o irq_asm.o \
        kernel.o gdt.o idt.o isr.o \
        pic.o irq.o keyboard.o \
-       shell.o pmm.o fs.o loader.o \
+       shell.o pmm.o heap.o fs.o loader.o \
        fb.o vga.o pixel.o
 
 kernel.bin: $(OBJS)

@@ -1,4 +1,5 @@
 #include "../include/pmm.h"
+#include "../include/heap.h"
 #include "../include/fs.h"
 #include "../include/loader.h"
 #include "../include/vga.h"
@@ -85,6 +86,8 @@ static void run_command() {
     } else if (strcmp(cmd_buf, "mem") == 0) {
         newline();
         pmm_print_stats();
+        newline();
+        heap_stats();
 
     } else if (strcmp(cmd_buf, "ls") == 0) {
         newline();
