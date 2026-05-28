@@ -73,8 +73,8 @@ void kernel_main(uint32_t mb_magic, uint32_t mb_info_addr) {
     fs_init();
     loader_init();
     pmm_init(mb_info_addr);
-    heap_init();
     paging_init();
+    heap_init();
     print("Paging  : ON",  0x0A);   newline();
     print("> ", 0x0F);
 

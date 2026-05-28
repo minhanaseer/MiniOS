@@ -53,6 +53,14 @@ void isr_handler(registers_t* regs) {
     print("  Err code  : ", 0x07); print_hex(regs->err_code); newline();
     print("  EIP       : ", 0x07); print_hex(regs->eip);      newline();
     print("  CS        : ", 0x07); print_hex(regs->cs);       newline();
+
+    /* For page faults (exception 14), CR2 holds the faulting virtual address */
+    if (regs->int_no == 14) {
+        uint32_t cr2;
+        __asm__ volatile("mov %%cr2, %0" : "=r"(cr2));
+        print("  CR2 (fault addr): ", 0x07); print_hex(cr2); newline();
+    }
+
     print("System halted.", 0x04); newline();
     __asm__ volatile("cli; hlt");
 }
