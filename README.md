@@ -266,7 +266,7 @@ This project is actively in development. Planned upcoming features:
 
 ## Inspiration
 
-This project was inspired by how Linus Torvalds started Linux in 1991 — with a simple bootloader and a basic shell on a 386 PC. Every major operating system started exactly like this.
+This project was inspired by how Linus Torvalds started Linux in 1991 with a simple bootloader and a basic shell on a 386 PC. Every major operating system started exactly like this.
 
 > "Just a hobby, won't be big and professional." — Linus Torvalds, 1991
 
