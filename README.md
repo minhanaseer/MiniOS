@@ -1,6 +1,6 @@
-# MyKernel 🖥️
+# MyKernel 
 
-> A bare-metal operating system kernel built from scratch in C and Assembly — running on x86 hardware inside QEMU.
+> A bare metal operating system kernel built from scratch in C and Assembly running on x86 hardware inside QEMU.
 
 ---
 
